@@ -1,12 +1,25 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/unison-labs-ai/unison-brain/main/assets/brain.svg" alt="Unison Brain" width="180" />
+
 # @unisonlabs/ai-sdk
 
-![CI](https://github.com/unison-labs-ai/unison-ai-sdk/actions/workflows/ci.yml/badge.svg)
+### Long-term memory for the Vercel AI SDK, powered by the Unison brain.
 
-Long-term memory for the [Vercel AI SDK](https://sdk.vercel.ai), powered by the [Unison brain](https://unisonlabs.ai).
+[![CI](https://github.com/unison-labs-ai/unison-ai-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/unison-labs-ai/unison-ai-sdk/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@unisonlabs/ai-sdk)](https://www.npmjs.com/package/@unisonlabs/ai-sdk)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/unison-labs-ai/unison-ai-sdk?style=social)](https://github.com/unison-labs-ai/unison-ai-sdk)
+
+[**Install**](#install) • [**Quick start**](#quick-start) • [**Options**](#options) • [**Low-level client**](#low-level-client) • [**For agents**](#agents)
+
+</div>
+
+---
+
+> **🤖 Reading this as an AI agent?** See [`AGENTS.md`](./AGENTS.md) — install, auth, and `wrapLanguageModel` usage in one page.
 
 Before each model call, the middleware recalls relevant memories from your Unison brain and injects them into the system prompt. After the call, the user/assistant turn is persisted back so future calls can reference it — giving any LLM durable, cross-session memory with zero boilerplate.
-
-Powered by the Unison brain.
 
 ## Install
 
@@ -85,6 +98,10 @@ await ingestConversation({
 });
 ```
 
+## Agents
+
+See [`AGENTS.md`](./AGENTS.md) for the full agent onboarding guide: install, auth, `wrapLanguageModel` usage, env vars, and contributor commands.
+
 ## Releasing
 
 CI runs on every push and pull request. To publish a new version to npm:
@@ -106,3 +123,28 @@ CI runs on every push and pull request. To publish a new version to npm:
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+---
+
+## Part of the Unison Labs constellation
+
+**One brain, every agent.** Every repo below reads from _and writes to_ the same [Unison brain](https://unisonlabs.ai) — no per-tool memory silos.
+
+| Repo | What it does |
+|---|---|
+| [unison-brain](https://github.com/unison-labs-ai/unison-brain) | CLI · SDK · MCP server — the core |
+| [claude-unison](https://github.com/unison-labs-ai/claude-unison) | Memory for Claude Code |
+| [cursor-unison](https://github.com/unison-labs-ai/cursor-unison) | Memory for Cursor |
+| [codex-unison](https://github.com/unison-labs-ai/codex-unison) | Memory for OpenAI Codex CLI |
+| [opencode-unison](https://github.com/unison-labs-ai/opencode-unison) | Memory for OpenCode |
+| [openclaw-unison](https://github.com/unison-labs-ai/openclaw-unison) | Memory for OpenClaw |
+| [pipecat-unison](https://github.com/unison-labs-ai/pipecat-unison) | Memory for Pipecat voice agents |
+| [langchain-unison](https://github.com/unison-labs-ai/langchain-unison) | LangChain memory, history & retriever |
+| [llama-index-memory-unison](https://github.com/unison-labs-ai/llama-index-memory-unison) | LlamaIndex memory provider |
+| **[unison-ai-sdk](https://github.com/unison-labs-ai/unison-ai-sdk)** | **Vercel AI SDK memory middleware ← you are here** |
+| [unison-mastra](https://github.com/unison-labs-ai/unison-mastra) | Mastra agent memory provider |
+| [python-sdk](https://github.com/unison-labs-ai/python-sdk) | Python SDK for the brain |
+| [install-mcp](https://github.com/unison-labs-ai/install-mcp) | One-command MCP installer |
+| [unison-fs](https://github.com/unison-labs-ai/unison-fs) | Mount the brain as a filesystem |
+| [backchannel](https://github.com/unison-labs-ai/backchannel) | Async messaging between agents |
+| [Unison-evals](https://github.com/unison-labs-ai/Unison-evals) | Open memory benchmark suite |
