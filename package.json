@@ -1,0 +1,58 @@
+{
+  "name": "@unisonlabs/ai-sdk",
+  "version": "0.1.0",
+  "description": "Long-term memory for the Vercel AI SDK, powered by the Unison brain",
+  "license": "MIT",
+  "author": "Unison Labs",
+  "homepage": "https://unisonlabs.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unison-labs-ai/unison-ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unison-labs-ai/unison-ai-sdk/issues"
+  },
+  "keywords": [
+    "ai-sdk",
+    "vercel-ai",
+    "memory",
+    "llm",
+    "ai-agents",
+    "knowledge-graph",
+    "unison"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "ai": ">=4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "ai": "^6.0.205",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
