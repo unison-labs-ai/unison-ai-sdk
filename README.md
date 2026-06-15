@@ -104,13 +104,13 @@ See [`AGENTS.md`](./AGENTS.md) for the full agent onboarding guide: install, aut
 
 ## Releasing
 
-CI runs on every push and pull request. To publish a new version to npm:
+Run `npm login` once to authenticate, then:
 
-1. Bump the version in `package.json`.
-2. Commit and push a tag: `git tag v0.x.y && git push origin v0.x.y`.
-3. The `release.yml` workflow triggers automatically, runs `npm publish --access public --provenance`.
+```bash
+bun run release
+```
 
-**Required repo secret:** `NPM_TOKEN` — set this to an npm Automation token scoped to the `@unisonlabs` org under **Settings → Secrets and variables → Actions**.
+That's it. The script builds the package, publishes `@unisonlabs/ai-sdk` to npm (idempotent — skips if the version is already published), and tags + pushes the release commit. Bump the version in `package.json` before running.
 
 ## Links
 

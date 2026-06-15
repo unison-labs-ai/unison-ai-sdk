@@ -43,7 +43,8 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "release": "bun scripts/release.ts"
   },
   "peerDependencies": {
     "ai": ">=4"
