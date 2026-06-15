@@ -4,10 +4,18 @@ import type {
   LanguageModelV3Message,
 } from '@ai-sdk/provider';
 import type { LanguageModelMiddleware } from 'ai';
-import { recall, ingestConversation } from './client.js';
+import { recall, ingestConversation, remember } from './client.js';
+import type { IngestTurn } from './client.js';
 
-export { recall, ingestConversation } from './client.js';
-export type { RecallOptions, RecallResult, IngestTurn, IngestOptions } from './client.js';
+export { recall, ingestConversation, remember } from './client.js';
+export type {
+  RecallOptions,
+  RecallResult,
+  IngestTurn,
+  IngestOptions,
+  RememberOptions,
+  RememberResult,
+} from './client.js';
 
 export interface UnisonMemoryOptions {
   token?: string;
@@ -16,7 +24,23 @@ export interface UnisonMemoryOptions {
   k?: number;
   recall?: boolean;
   persist?: boolean;
+  /**
+   * Auto-run the `/remember` skill over the whole session — NOT per turn (that
+   * would be one judgment LLM pass per generation). When true, the middleware
+   * debounces and fires one `remember` after `rememberDebounceMs` of inactivity
+   * (a session-end approximation). For an exact session-end, call `flush()`.
+   * Default false — per-turn `ingest` already captures everything cheaply.
+   */
+  rememberOnFinish?: boolean;
+  /** Debounce window for `rememberOnFinish`. Default 60_000ms. */
+  rememberDebounceMs?: number;
 }
+
+/** The middleware, plus `flush()` to remember the accumulated session on demand
+ *  (e.g. when the thread closes). */
+export type UnisonMemoryMiddleware = LanguageModelMiddleware & {
+  flush: () => Promise<void>;
+};
 
 function resolveToken(opts: UnisonMemoryOptions): string {
   const token = opts.token ?? process.env['UNISON_TOKEN'];
@@ -72,11 +96,41 @@ function extractAssistantText(result: LanguageModelV3GenerateResult): string {
   return '';
 }
 
-export function unisonMemory(options: UnisonMemoryOptions): LanguageModelMiddleware {
+export function unisonMemory(options: UnisonMemoryOptions): UnisonMemoryMiddleware {
   const shouldRecall = options.recall !== false;
   const shouldPersist = options.persist !== false;
 
-  return {
+  // Accumulated session turns for the optional session-level `remember`.
+  const sessionTurns: IngestTurn[] = [];
+  let debounce: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = async (): Promise<void> => {
+    if (debounce) {
+      clearTimeout(debounce);
+      debounce = null;
+    }
+    if (sessionTurns.length === 0) return;
+    let token: string;
+    try {
+      token = resolveToken(options);
+    } catch {
+      return;
+    }
+    const turns = sessionTurns.splice(0); // take + clear atomically
+    try {
+      await remember({
+        apiUrl: resolveApiUrl(options),
+        token,
+        dump: { turns },
+        source: 'ai-sdk-session',
+        sourceRef: options.sessionId,
+      });
+    } catch (err) {
+      console.warn('[unison-memory] remember error:', (err as Error).message);
+    }
+  };
+
+  const middleware: LanguageModelMiddleware = {
     specificationVersion: 'v3',
 
     async transformParams({ params }) {
@@ -136,21 +190,33 @@ export function unisonMemory(options: UnisonMemoryOptions): LanguageModelMiddlew
 
           const apiUrl = resolveApiUrl(options);
 
-          ingestConversation({
-            apiUrl,
-            token,
-            sessionId: options.sessionId,
-            turns: [
-              { role: 'user', content: userText },
-              ...(assistantText ? [{ role: 'assistant' as const, content: assistantText }] : []),
-            ],
-          }).catch((err: unknown) => {
-            console.warn('[unison-memory] persist error:', (err as Error).message);
-          });
+          const turns: IngestTurn[] = [
+            { role: 'user', content: userText },
+            ...(assistantText ? [{ role: 'assistant' as const, content: assistantText }] : []),
+          ];
+
+          ingestConversation({ apiUrl, token, sessionId: options.sessionId, turns }).catch(
+            (err: unknown) => {
+              console.warn('[unison-memory] persist error:', (err as Error).message);
+            },
+          );
+
+          // Accumulate for the session-level remember (not per turn — see option docs).
+          if (options.rememberOnFinish) {
+            sessionTurns.push(...turns);
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(() => {
+              void flush();
+            }, options.rememberDebounceMs ?? 60_000);
+            // Don't keep the process alive just for the debounce.
+            (debounce as { unref?: () => void }).unref?.();
+          }
         }
       }
 
       return result;
     },
   };
+
+  return Object.assign(middleware, { flush });
 }

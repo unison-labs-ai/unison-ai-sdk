@@ -42,6 +42,50 @@ export async function recall(opts: RecallOptions): Promise<RecallResult> {
   return res.json() as Promise<RecallResult>;
 }
 
+export interface RememberOptions {
+  apiUrl: string;
+  token: string;
+  /** What to remember: freeform text, conversation turns, or a raw session log. */
+  dump: string | { turns: IngestTurn[] } | { sessionJsonl: string };
+  /** Provenance label, e.g. "claude-code-session". */
+  source?: string;
+  /** Stable id → idempotent re-remember. */
+  sourceRef?: string;
+  /** Optional steering, e.g. "focus on decisions". */
+  hints?: string;
+}
+
+export interface RememberResult {
+  jobId: string;
+}
+
+/**
+ * Run the `/remember` skill server-side over a dump: applies the save-or-skip
+ * filter, dedupes, and files curated /private/kb notes + entity facts. Returns
+ * a jobId; the work runs in the background.
+ */
+export async function remember(opts: RememberOptions): Promise<RememberResult> {
+  const res = await fetch(`${opts.apiUrl}/v1/brain/remember`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${opts.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      dump: opts.dump,
+      source: opts.source,
+      sourceRef: opts.sourceRef,
+      hints: opts.hints,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Unison remember failed: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json() as Promise<RememberResult>;
+}
+
 export async function ingestConversation(opts: IngestOptions): Promise<void> {
   const url = `${opts.apiUrl}/v1/brain/ingest`;
 

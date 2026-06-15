@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { LanguageModelV3CallOptions, LanguageModelV3GenerateResult } from '@ai-sdk/provider';
-import { unisonMemory } from './index.js';
+import { remember, unisonMemory } from './index.js';
 
 const MOCK_TOKEN = 'usk_live_testtoken';
 const MOCK_SESSION = 'test-session-123';
@@ -296,5 +296,84 @@ describe('unisonMemory', () => {
       expect(result).toEqual(generateResult);
       warnSpy.mockRestore();
     });
+  });
+});
+
+describe('remember', () => {
+  it('POSTs the dump to /v1/brain/remember and returns the jobId', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ jobId: 'job-1' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const res = await remember({
+        apiUrl: MOCK_API_URL,
+        token: MOCK_TOKEN,
+        dump: 'we chose Postgres',
+        source: 'claude-code-session',
+      });
+      expect(res.jobId).toBe('job-1');
+      const [url, opts] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${MOCK_API_URL}/v1/brain/remember`);
+      expect((opts.headers as Record<string, string>)['Authorization']).toBe(`Bearer ${MOCK_TOKEN}`);
+      const body = JSON.parse(opts.body as string) as { dump: string; source: string };
+      expect(body.dump).toBe('we chose Postgres');
+      expect(body.source).toBe('claude-code-session');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('throws on non-ok response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ ok: false, status: 401, statusText: 'Unauthorized' }));
+    try {
+      await expect(
+        remember({ apiUrl: MOCK_API_URL, token: 'bad', dump: 'x' }),
+      ).rejects.toThrow(/remember failed: 401/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('unisonMemory rememberOnFinish + flush', () => {
+  it('flush() remembers the accumulated session via POST /v1/brain/remember', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ jobId: 'j' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const mem = unisonMemory({
+        token: MOCK_TOKEN,
+        sessionId: MOCK_SESSION,
+        apiUrl: MOCK_API_URL,
+        rememberOnFinish: true,
+      });
+      const doGenerate = vi.fn().mockResolvedValue(makeMockGenerateResult('Postgres it is.'));
+      await mem.wrapGenerate!({ doGenerate, doStream: vi.fn(), params: makeParams('Which DB?'), model: {} as never });
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled()); // the per-turn ingest fired
+
+      await mem.flush();
+      const rememberCall = (fetchMock.mock.calls as [string, RequestInit][]).find(([u]) =>
+        u.endsWith('/v1/brain/remember'),
+      );
+      expect(rememberCall).toBeDefined();
+      const body = JSON.parse(rememberCall![1].body as string) as {
+        dump: { turns: { role: string; content: string }[] };
+        sourceRef: string;
+      };
+      expect(body.sourceRef).toBe(MOCK_SESSION);
+      expect(body.dump.turns.some((t) => t.content === 'Which DB?')).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('flush() is a no-op when nothing was accumulated', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const mem = unisonMemory({ token: MOCK_TOKEN, sessionId: MOCK_SESSION, apiUrl: MOCK_API_URL });
+      await mem.flush();
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
