@@ -6,8 +6,15 @@ import type {
 import type { LanguageModelMiddleware } from 'ai';
 import { recall, ingestConversation } from './client.js';
 
-export { recall, ingestConversation } from './client.js';
-export type { RecallOptions, RecallResult, IngestTurn, IngestOptions } from './client.js';
+export { recall, ingestConversation, remember } from './client.js';
+export type {
+  RecallOptions,
+  RecallResult,
+  IngestTurn,
+  IngestOptions,
+  RememberOptions,
+  RememberResult,
+} from './client.js';
 
 export interface UnisonMemoryOptions {
   token?: string;
