@@ -50,7 +50,7 @@
     "ai": ">=4"
   },
   "devDependencies": {
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "ai": "^6.0.205",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
