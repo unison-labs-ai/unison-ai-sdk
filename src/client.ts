@@ -61,7 +61,7 @@ export interface RememberResult {
 
 /**
  * Run the `/remember` skill server-side over a dump: applies the save-or-skip
- * filter, dedupes, and files curated /private/kb notes + entity facts. Returns
+ * filter, dedupes, and files curated notes under /private/notes/ and entity facts under /private/<kind>/. Returns
  * a jobId; the work runs in the background.
  */
 export async function remember(opts: RememberOptions): Promise<RememberResult> {

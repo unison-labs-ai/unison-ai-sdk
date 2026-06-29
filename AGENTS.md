@@ -20,7 +20,7 @@ Follows the [AGENTS.md](https://agents.md/) convention. Human contributors: see 
 | **Recall** | Before each model call | Calls `GET /v1/brain/context` with the latest user message; prepends the returned `contextMd` to the system prompt |
 | **Persist** | After each model call | Posts the user + assistant turn to `POST /v1/brain/ingest` (fire-and-forget) |
 
-Memory is stored under `/private/sessions/<sessionId>.md` in the Unison brain and scoped to the token's workspace, so context never leaks across users.
+Conversation turns are ingested via POST /v1/brain/ingest and stored by the brain under the appropriate private-scope paths after entity extraction.
 
 ### Install
 
